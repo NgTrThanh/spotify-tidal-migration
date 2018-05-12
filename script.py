@@ -1,21 +1,25 @@
-from secrets import tidal_id, tidal_username, tidal_pwd, spotify_id, spotify_username, spotify_discover_weekly_id, SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI
+from secrets import tidal_id, tidal_id_2, tidal_username, tidal_username_2, tidal_pwd, tidal_pwd_2, spotify_id, spotify_id_2, spotify_username, spotify_username_2, spotify_discover_weekly_id, SPOTIPY_CLIENT_ID, SPOTIPY_CLIENT_SECRET, SPOTIPY_REDIRECT_URI
 import requests
 import spotipy
 from spotipy.oauth2 import SpotifyClientCredentials
 import spotipy.util as util
 import sys
 import tidalapi
-
+import time
 
 # Options:
 # connect_to_spotify()
-# connect_to_tidal()
-# delete_all_tidal_playlists()
+# connect_to_tidal(tidal_username, tidal_pwd)
+# delete_all_tidal_playlists(tidal_id, tidal_session)
 # move_all_tidal_playlists_to_spotify()
 # move_one_tidal_playlist_to_spotify(playlist_id)
 # move_all_spotify_playlists_to_tidal()
 # move_favourites_from_spotify_to_tidal()
 # move_discover_weekly_from_spotify_to_tidal()
+# copy_tidal_playlists_to_another_tidal_account()
+# MIGRATE SPOTIFY ACCOUNT = COPY PLAYLISTS + SAVED TRACKS
+# copy_spotify_playlists_to_another_spotify_account()
+# copy_spotify_saved_tracks_to_another_spotify_account()
 
 # Endpoints not in tidalapi
 def get_tidal_create_playlist_url(tidal_id):
@@ -26,7 +30,7 @@ def get_tidal_find_track_url():
     return 'https://listen.tidal.com/v1/search/tracks'
 def get_tidal_playlist(playlist_id):
     return 'https://listen.tidal.com/v1/playlists/' + playlist_id
-def get_tidal_user_playlists():
+def get_tidal_user_playlists(tidal_id):
     return 'https://listen.tidal.com/v1/users/' + tidal_id + '/playlists'
 
 # Endpoints not in spotipy
@@ -48,13 +52,13 @@ def connect_to_spotify():
     if token:
         sp = spotipy.Spotify(auth=token)
     else:
-        print("Can't get spotify token for " + username)
+        print("Can't get spotify token for " + spotify_username)
         sys.exit()
 
     return sp, token
 
 
-def connect_to_tidal():
+def connect_to_tidal(tidal_username, tidal_pwd):
     tidal_session = tidalapi.Session()
     try:
         tidal_session.login(tidal_username, tidal_pwd)
@@ -85,11 +89,11 @@ def move_favourites_from_spotify_to_tidal():
         spotify_favourites = _get_spotify_favourites(offset)
 
 
-def delete_all_tidal_playlists():
+def delete_all_tidal_playlists(tidal_id, tidal_session):
     try:
         r = requests.request(
             'GET',
-            get_tidal_user_playlists(),
+            get_tidal_user_playlists(tidal_id),
             headers={
                 'x-tidal-sessionid': tidal_session.session_id,
                 'if-none-match': '*'
@@ -131,7 +135,7 @@ def move_one_tidal_playlist_to_spotify(playlist_id):
 
 
 def move_all_spotify_playlists_to_tidal():
-    get_tidal_old_playlists()
+    get_tidal_old_playlists(tidal_id, tidal_session)
     playlists = sp.user_playlists(spotify_id)
     while playlists:
         for i, playlist in enumerate(playlists['items']):
@@ -145,6 +149,22 @@ def move_all_spotify_playlists_to_tidal():
         else:
             playlists = None
 
+
+def copy_tidal_playlists_to_another_tidal_account():
+    get_tidal_old_playlists(tidal_id_2, tidal_session_2)
+    playlists_to_copy = tidal_session_2.get_user_playlists(tidal_id)
+    i=1
+    for playlist in playlists_to_copy:
+	#check if playlist with a same name already exists
+	if playlist.name not in tidal_oldplaylists:
+            	print("Working on playlist " + str(i) + "/" + str(len(playlists_to_copy)) + ": " + playlist.name)
+    		playlist_id = _create_tidal_playlist(playlist.name, tidal_id_2, tidal_session_2)
+       		tracks = tidal_session_2.get_playlist_tracks(playlist.id)
+    		#add tracks to playlist_id
+    		_add_tracks_to_tidal_playlist(playlist_id, tracks, tidal_session_2)
+    	else:
+		print("A playlist with name " + playlist.name + " already exists in TIDAL. Skipping...")
+	i+=1
 
 def move_discover_weekly_from_spotify_to_tidal():
     try:
@@ -164,7 +184,7 @@ def move_discover_weekly_from_spotify_to_tidal():
 
 def _add_playlist_to_tidal(playlist, tidal_session, tracks=None, playlist_name=None):
     playlist_name_catch = playlist_name if playlist_name else playlist['name']
-    playlist_id = _create_tidal_playlist(playlist_name_catch)
+    playlist_id = _create_tidal_playlist(playlist_name_catch, tidal_id, tidal_session)
 
     if not playlist_id:
         return
@@ -182,10 +202,10 @@ def _add_playlist_to_tidal(playlist, tidal_session, tracks=None, playlist_name=N
     while tracks_catch['next']:
         tracks_catch = sp.next(tracks_catch)
         _add_track_to_sanitized_list(tracks_catch)
-    _add_tracks_to_tidal_playlist(playlist_id, sanitized_tracks)
+    _add_tracks_to_tidal_playlist(playlist_id, sanitized_tracks, tidal_session)
 
 
-def _add_tracks_to_tidal_playlist(playlist_id, tracks):
+def _add_tracks_to_tidal_playlist(playlist_id, tracks, tidal_session):
     url = get_tidal_add_track_to_playlist_url(playlist_id)
     for name, artist in tracks:
         tidal_track_id = _search_for_track_on_tidal(name, artist)
@@ -207,11 +227,11 @@ def _add_tracks_to_tidal_playlist(playlist_id, tracks):
                 print('Error adding tracks to playlist: ' + e)
                 # TODO: should add playlist name to CSV of failures
 
-def get_tidal_old_playlists():
+def get_tidal_old_playlists(tidal_id, tidal_session):
     try:
         r = requests.request(
             'GET',
-            get_tidal_user_playlists(),
+            get_tidal_user_playlists(tidal_id),
             headers={
                 'x-tidal-sessionid': tidal_session.session_id,
                 'if-none-match': '*'
@@ -221,7 +241,6 @@ def get_tidal_old_playlists():
                 'limit': 999
             }
         )
-	# print r.json()
         playlists = [item['title'] for item in r.json()['items']]
     except requests.exceptions.RequestException as e:
         print("Could not get list of playlists")
@@ -281,7 +300,7 @@ def _search_for_track_on_tidal(name, artist):
     return id;
 
 
-def _create_tidal_playlist(playlist_name):
+def _create_tidal_playlist(playlist_name, tidal_id, tidal_session):
     try:
         r = requests.request(
             'POST',
@@ -303,7 +322,6 @@ def _create_tidal_playlist(playlist_name):
 
     return r.json()['uuid']
 
-
 def _add_tracks_to_spotify_playlist(track_ids, playlist_id):
     scope = 'playlist-modify-public'
     token = util.prompt_for_user_token(username, scope)
@@ -315,8 +333,75 @@ def _add_tracks_to_spotify_playlist(track_ids, playlist_id):
     else:
         print("Can't get token for " + username)
 
+def copy_spotify_playlists_to_another_spotify_account():
+    scope = 'playlist-read-private'
+    token = util.prompt_for_user_token(spotify_username, scope)
 
-sp, sp_token = connect_to_spotify()
-tidal_session = connect_to_tidal()
+    if token:
+        sp = spotipy.Spotify(auth=token)
+        sp.trace = False
+	offsets = [0,50,100,150,200,250,300] #TODO: How many playlists does the user have?
+	playlists_owner_ids = []
+	playlists_ids = []
+	for offset in offsets:
+        	r = sp.user_playlists(spotify_id,50,offset)
+		for item in r['items']:
+			playlists_owner_ids.append(item['owner']['id'])
+			playlists_ids.append(item['id'])
+    	scope_2 = 'playlist-modify-public'
+    	token_2 = util.prompt_for_user_token(spotify_username_2, scope_2)
+
+    	if token_2:
+        	sp_2 = spotipy.Spotify(auth=token_2)
+        	sp_2.trace = False
+		i=len(playlists_ids)-1
+		for playlist_id in playlists_ids:
+			#print("PLAYLIST NUMBER " + str(i) + ": playlist_id=" + playlists_ids[i] + ", playlist_owner_id=" + playlists_owner_ids[i])
+			sp_2.user_playlist_follow_playlist(playlists_owner_ids[i], playlists_ids[i])
+			i-=1
+	else:
+        	print("Can't get token for " + spotify_username_2)
+    else:
+        print("Can't get token for " + spotify_username)
+
+def copy_spotify_saved_tracks_to_another_spotify_account():
+    scope = 'user-library-read'
+    token = util.prompt_for_user_token(spotify_username, scope)
+
+    if token:
+        sp = spotipy.Spotify(auth=token)
+        sp.trace = False
+	offsets = [0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300] #TODO: How many tracks does the user have?
+	tracks_ids = []
+	for offset in offsets:
+		r = sp.current_user_saved_tracks(20,offset)
+		for item in r['items']:
+			tracks_ids.append(item['track']['id'])
+    	scope_2 = 'user-library-modify'
+    	token_2 = util.prompt_for_user_token(spotify_username_2, scope_2)
+    	if token_2:
+        	sp_2 = spotipy.Spotify(auth=token_2)
+        	sp_2.trace = False
+		i=len(tracks_ids)-1
+		for track_id in tracks_ids:
+			sp_2.current_user_saved_tracks_add([tracks_ids[i]])
+			i-=1
+			#sleep needed to preserve tracks "chronological order". Apparently 0.5s is not enough
+			time.sleep(1)
+	else:
+        	print("Can't get token for " + spotify_username_2)
+    else:
+        print("Can't get token for " + spotify_username)
+
+start = time.time()
+#sp, sp_token = connect_to_spotify() #NEEDED ONLY FOR MOVING FROM SPOTIFY TO TIDAL
+#tidal_session = connect_to_tidal(tidal_username, tidal_pwd) #NEEDED ONLY FOR 1) MOVING FROM SPOTIFY TO TIDAL 2) MOVING FROM TIDAL1 TO TIDAL2
+#tidal_session_2 = connect_to_tidal(tidal_username_2, tidal_pwd_2) #NEEDED ONLY FOR MOVING FROM TIDAL1 TO TIDAL2
 # move_discover_weekly_from_spotify_to_tidal()
-move_all_spotify_playlists_to_tidal()
+# move_all_spotify_playlists_to_tidal()
+# copy_tidal_playlists_to_another_tidal_account()
+#MIGRATE SPOTIFY ACCOUNT = COPY PLAYLISTS + SAVED TRACKS
+# copy_spotify_playlists_to_another_spotify_account()
+# copy_spotify_saved_tracks_to_another_spotify_account()
+end = time.time()
+print("Time elapsed: " + str(end - start) + " s (" + str((end-start)/60) + " min)")

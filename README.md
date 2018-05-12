@@ -1,6 +1,6 @@
-# Spotify -> Tidal batch upload
+# Spotify -> Tidal Migration (batch upload) + Spotify -> Spotify Account Migration + Tidal -> Tidal Account Migration
 
-A suite of helpful (to me) functions to transfer data from Spotify to Tidal, and vice versa, using [tidalapi](http://pythonhosted.org/tidalapi/_modules/tidalapi.html) and [spotipy](http://spotipy.readthedocs.io/). Because Tidal does not have a public-facing API, if they change their URLs or requirements, this will break. Feel free to submit a bug report if it does and I'll try to fix it if I can.
+A suite of helpful (to me) functions to transfer music (i.e. playlists) from Spotify to Tidal, and vice versa, using [tidalapi](http://pythonhosted.org/tidalapi/_modules/tidalapi.html) and [spotipy](http://spotipy.readthedocs.io/). The suite also helps copying playlists and tracks between two accounts of the same service (i.e. between two TIDAL accounts or between two Spotify accounts). Because Tidal does not have a public-facing API, if they change their URLs or requirements, this will break. Feel free to submit a bug report if it does and I'll try to fix it if I can.
 
 ## Things you can do
 
@@ -22,6 +22,15 @@ Move all your favourites/liked/saved tracks from spotify to your favourites trac
 ### move_discover_weekly_from_spotify_to_tidal()
 Move a discovery weekly playlist on spotify to tidal. A minimal version of this repository that calls this function and is configured to run on my server is in [this branch](https://github.com/ssemenova/tidal-spotify-converter/tree/discover-weekly-systemd-job).
 
+### copy_tidal_playlists_to_another_tidal_account()
+Copy all your TIDAL playlists from one account to another one.
+
+### copy_spotify_playlists_to_another_spotify_account()
+Copy all your Spotify playlists from one account to another one. Displaying order is preserved.
+
+### copy_spotify_saved_tracks_to_another_spotify_account()
+Copy all your Spotify saved tracks from one account to another one. Chronological order (when the track was added) is preserved.
+
 There are also ```connect_to_spotify``` and ```connect_to_tidal``` functions, which you must run before running any of the other functions. Both authenticate you and return either a spotipy or tidalapi session.
 
 
@@ -30,17 +39,22 @@ There are also ```connect_to_spotify``` and ```connect_to_tidal``` functions, wh
 1. Clone this repository
 2. Install the requirements: ```pip install -r requirements.txt```
 3. Create a secrets.py file: ```touch secrets.py```
-4. Copy and paste the following into the secrets file. You want numbers for both the tidal and spotify IDs, not your email address. See the sections below for how to obtain both your tidal and spotify IDs, as well as spotify client credentials.
+4. Copy and paste the following into the secrets file. You want numbers for both the tidal and spotify IDs, not your email address. See the sections below for how to obtain both your tidal and spotify IDs, as well as spotify client credentials. If you want to copy playlists and tracks from one TIDAL or Spotify account to another one, fill also the "_2" fields (e.g. copy FROM account with tidal_id TO account with tidal_id_2 or FROM account with spotify_id to account with spotify_id_2).
 ```
 tidal_id = 'your_tidal_id'
+tidal_username = 'your_tidal_email_address@email.com'
 tidal_pwd = 'your_tidal_password'
 spotify_id = 'your_spotify_id'
-tidal_username = 'your_tidal_email_address@email.com'
 spotify_username = 'your_spotify_email_address@email.com'
 SPOTIPY_CLIENT_ID = 'your_spotify_client_ID'
 SPOTIPY_CLIENT_SECRET = 'your_spotify_client_secret'
 SPOTIPY_REDIRECT_URI = 'http://localhost/'
 spotify_discover_weekly_id = 'your_spotify_discover_weekly_id'
+tidal_id_2 = 'your_tidal_id'
+tidal_username_2 = 'your_tidal_email_address@email.com'
+tidal_pwd_2 = 'your_tidal_password'
+spotify_id_2 = 'your_spotify_id'
+spotify_username_2 = 'your_spotify_email_address@email.com'
 ```
 5. Run script.py: ```python script.py```. Right now, the script just signs into Spotify, signs into Tidal, and moves all Spotify songs to Tidal, but you can edit the script to run whatever functions you want.
 6. ???

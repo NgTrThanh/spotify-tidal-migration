@@ -394,11 +394,11 @@ def copy_spotify_saved_tracks_to_another_spotify_account():
         print("Can't get token for " + spotify_username)
 
 start = time.time()
-#sp, sp_token = connect_to_spotify() #NEEDED ONLY FOR MOVING FROM SPOTIFY TO TIDAL
-#tidal_session = connect_to_tidal(tidal_username, tidal_pwd) #NEEDED ONLY FOR 1) MOVING FROM SPOTIFY TO TIDAL 2) MOVING FROM TIDAL1 TO TIDAL2
+sp, sp_token = connect_to_spotify() #NEEDED ONLY FOR MOVING FROM SPOTIFY TO TIDAL
+tidal_session = connect_to_tidal(tidal_username, tidal_pwd) #NEEDED ONLY FOR 1) MOVING FROM SPOTIFY TO TIDAL 2) MOVING FROM TIDAL1 TO TIDAL2
 #tidal_session_2 = connect_to_tidal(tidal_username_2, tidal_pwd_2) #NEEDED ONLY FOR MOVING FROM TIDAL1 TO TIDAL2
 # move_discover_weekly_from_spotify_to_tidal()
-# move_all_spotify_playlists_to_tidal()
+move_all_spotify_playlists_to_tidal()
 # copy_tidal_playlists_to_another_tidal_account()
 #MIGRATE SPOTIFY ACCOUNT = COPY PLAYLISTS + SAVED TRACKS
 # copy_spotify_playlists_to_another_spotify_account()

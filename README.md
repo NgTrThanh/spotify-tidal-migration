@@ -1,4 +1,4 @@
-# Spotify -> Tidal Migration (batch upload) + Spotify -> Spotify Account Migration + Tidal -> Tidal Account Migration
+# Spotify2Tidal, Spotify2Spotify, Tidal2Tidal Account Migration
 
 A suite of helpful (to me) functions to transfer music (i.e. playlists) from Spotify to Tidal, and vice versa, using [tidalapi](http://pythonhosted.org/tidalapi/_modules/tidalapi.html) and [spotipy](http://spotipy.readthedocs.io/). The suite also helps copying playlists and tracks between two accounts of the same service (i.e. between two TIDAL accounts or between two Spotify accounts). Because Tidal does not have a public-facing API, if they change their URLs or requirements, this will break. Feel free to submit a bug report if it does and I'll try to fix it if I can.
 

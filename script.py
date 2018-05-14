@@ -139,11 +139,11 @@ def move_all_spotify_playlists_to_tidal():
     playlists = sp.user_playlists(spotify_id)
     while playlists:
         for i, playlist in enumerate(playlists['items']):
-	    if playlist['name'] not in tidal_oldplaylists:
-            	print("Workin on playlist:" + playlist['name'])
-            	_add_playlist_to_tidal(playlist, tidal_session)
-	    else:
-	    	print("A playlist with name " + playlist['name'] + " already exists in TIDAL. Skipping...")
+            if playlist['name'] not in tidal_oldplaylists:
+                print("Workin on playlist:" + playlist['name'])
+                _add_playlist_to_tidal(playlist, tidal_session)
+            else:
+                print("A playlist with name " + playlist['name'] + " already exists in TIDAL. Skipping...")
         if playlists['next']:
             playlists = sp.next(playlists)
         else:
@@ -155,16 +155,16 @@ def copy_tidal_playlists_to_another_tidal_account():
     playlists_to_copy = tidal_session_2.get_user_playlists(tidal_id)
     i=1
     for playlist in playlists_to_copy:
-	#check if playlist with a same name already exists
-	if playlist.name not in tidal_oldplaylists:
-            	print("Working on playlist " + str(i) + "/" + str(len(playlists_to_copy)) + ": " + playlist.name)
-    		playlist_id = _create_tidal_playlist(playlist.name, tidal_id_2, tidal_session_2)
-       		tracks = tidal_session_2.get_playlist_tracks(playlist.id)
-    		#add tracks to playlist_id
-    		_add_tracks_to_tidal_playlist(playlist_id, tracks, tidal_session_2)
-    	else:
-		print("A playlist with name " + playlist.name + " already exists in TIDAL. Skipping...")
-	i+=1
+        #check if playlist with a same name already exists
+        if playlist.name not in tidal_oldplaylists:
+                print("Working on playlist " + str(i) + "/" + str(len(playlists_to_copy)) + ": " + playlist.name)
+                playlist_id = _create_tidal_playlist(playlist.name, tidal_id_2, tidal_session_2)
+                tracks = tidal_session_2.get_playlist_tracks(playlist.id)
+                #add tracks to playlist_id
+                _add_tracks_to_tidal_playlist(playlist_id, tracks, tidal_session_2)
+        else:
+                print("A playlist with name " + playlist.name + " already exists in TIDAL. Skipping...")
+        i+=1
 
 def move_discover_weekly_from_spotify_to_tidal():
     try:
@@ -246,7 +246,7 @@ def get_tidal_old_playlists(tidal_id, tidal_session):
         print("Could not get list of playlists")
     if playlists:
         for playlist in playlists:
-		tidal_oldplaylists.append(playlist)
+                tidal_oldplaylists.append(playlist)
 
 
 def _search_for_track_on_tidal(name, artist):
@@ -340,27 +340,27 @@ def copy_spotify_playlists_to_another_spotify_account():
     if token:
         sp = spotipy.Spotify(auth=token)
         sp.trace = False
-	offsets = [0,50,100,150,200,250,300] #TODO: How many playlists does the user have?
-	playlists_owner_ids = []
-	playlists_ids = []
-	for offset in offsets:
-        	r = sp.user_playlists(spotify_id,50,offset)
-		for item in r['items']:
-			playlists_owner_ids.append(item['owner']['id'])
-			playlists_ids.append(item['id'])
-    	scope_2 = 'playlist-modify-public'
-    	token_2 = util.prompt_for_user_token(spotify_username_2, scope_2)
+        offsets = [0,50,100,150,200,250,300] #TODO: How many playlists does the user have?
+        playlists_owner_ids = []
+        playlists_ids = []
+        for offset in offsets:
+                r = sp.user_playlists(spotify_id,50,offset)
+                for item in r['items']:
+                        playlists_owner_ids.append(item['owner']['id'])
+                        playlists_ids.append(item['id'])
+        scope_2 = 'playlist-modify-public'
+        token_2 = util.prompt_for_user_token(spotify_username_2, scope_2)
 
-    	if token_2:
-        	sp_2 = spotipy.Spotify(auth=token_2)
-        	sp_2.trace = False
-		i=len(playlists_ids)-1
-		for playlist_id in playlists_ids:
-			#print("PLAYLIST NUMBER " + str(i) + ": playlist_id=" + playlists_ids[i] + ", playlist_owner_id=" + playlists_owner_ids[i])
-			sp_2.user_playlist_follow_playlist(playlists_owner_ids[i], playlists_ids[i])
-			i-=1
-	else:
-        	print("Can't get token for " + spotify_username_2)
+        if token_2:
+                sp_2 = spotipy.Spotify(auth=token_2)
+                sp_2.trace = False
+                i=len(playlists_ids)-1
+                for playlist_id in playlists_ids:
+                        #print("PLAYLIST NUMBER " + str(i) + ": playlist_id=" + playlists_ids[i] + ", playlist_owner_id=" + playlists_owner_ids[i])
+                        sp_2.user_playlist_follow_playlist(playlists_owner_ids[i], playlists_ids[i])
+                        i-=1
+        else:
+                print("Can't get token for " + spotify_username_2)
     else:
         print("Can't get token for " + spotify_username)
 
@@ -371,25 +371,25 @@ def copy_spotify_saved_tracks_to_another_spotify_account():
     if token:
         sp = spotipy.Spotify(auth=token)
         sp.trace = False
-	offsets = [0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300] #TODO: How many tracks does the user have?
-	tracks_ids = []
-	for offset in offsets:
-		r = sp.current_user_saved_tracks(20,offset)
-		for item in r['items']:
-			tracks_ids.append(item['track']['id'])
-    	scope_2 = 'user-library-modify'
-    	token_2 = util.prompt_for_user_token(spotify_username_2, scope_2)
-    	if token_2:
-        	sp_2 = spotipy.Spotify(auth=token_2)
-        	sp_2.trace = False
-		i=len(tracks_ids)-1
-		for track_id in tracks_ids:
-			sp_2.current_user_saved_tracks_add([tracks_ids[i]])
-			i-=1
-			#sleep needed to preserve tracks "chronological order". Apparently 0.5s is not enough
-			time.sleep(1)
-	else:
-        	print("Can't get token for " + spotify_username_2)
+        offsets = [0,20,40,60,80,100,120,140,160,180,200,220,240,260,280,300] #TODO: How many tracks does the user have?
+        tracks_ids = []
+        for offset in offsets:
+                r = sp.current_user_saved_tracks(20,offset)
+                for item in r['items']:
+                     tracks_ids.append(item['track']['id'])
+        scope_2 = 'user-library-modify'
+        token_2 = util.prompt_for_user_token(spotify_username_2, scope_2)
+        if token_2:
+               sp_2 = spotipy.Spotify(auth=token_2)
+               sp_2.trace = False
+               i=len(tracks_ids)-1
+                 for track_id in tracks_ids:
+                        sp_2.current_user_saved_tracks_add([tracks_ids[i]])
+                        i-=1
+                        #sleep needed to preserve tracks "chronological order". Apparently 0.5s is not enough
+                        time.sleep(1)
+        else:
+                print("Can't get token for " + spotify_username_2)
     else:
         print("Can't get token for " + spotify_username)
 

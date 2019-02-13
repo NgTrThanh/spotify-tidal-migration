@@ -64,7 +64,8 @@ spotify_username_2 = 'your_spotify_email_address@email.com'
 Go to your profile page on spotify, and click on the three dots > share > copy spotify URI. Then, when pasting the result into your secrets file, get rid of "spotify:user:" before the number.
 
 ## To find your tidal ID
-Go to the tidal [web player](https://listen.tidal.com), click on your profile, copy the number in the url: https://listen.tidal.com/profile/thenumberyouwant.
+Go to the tidal [web player](https://listen.tidal.com), login and then open the Network pane inside the Developer tools in Firefox. Look at the request URL: your id will be right after v1/users/. Example:
+![alt text](https://user-images.githubusercontent.com/6182097/48568992-b2794880-e8ce-11e8-90a3-bd299084aa1d.png)
 
 ## To find your spotify discover weekly ID
 Go to your discover weekly playlist on spotify, and click on the three dots > share > copy playlist link. Then, when pasting the results into your secret file, copy the number between "https://open.spotify.com/user/spotify/playlist/" and "?si=bunchOfRandomThings".
